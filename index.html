@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Workflow Roadmap with Task Deadlines</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+</head>
+<body>
+    <div class="roadmap">
+        <h1>Project Workflow Roadmap</h1>
+        <div class="project-dates">
+            <div>
+                <label for="start-date">Project Start Date:</label>
+                <input type="date" id="start-date">
+            </div>
+            <div>
+                <label for="end-date">Project End Date:</label>
+                <input type="date" id="end-date">
+            </div>
+        </div>
+        <div class="countdown-container">
+            <div class="countdown-title">Project Timeline</div>
+            <div class="countdown-value" id="countdown-days">-- days remaining</div>
+            <div class="countdown-subtitle" id="countdown-percentage">--% of project complete</div>
+        </div>
+        <div id="steps-container"></div>
+        <button class="add-button">Add New Step</button>
+        <button class="print-button">Print Roadmap</button>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress"></div>
+                <div class="step-markers"></div>
+            </div>
+            <div class="progress-labels"></div>
+            <div class="progress-percentage">0% Complete</div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
