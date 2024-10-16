@@ -1,14 +1,35 @@
-let steps = [
-    { title: "Project Initiation", description: "Define project scope, objectives, and stakeholders", completed: false, startDate: null, endDate: null },
-    { title: "Planning", description: "Create project plan, timeline, and resource allocation", completed: false, startDate: null, endDate: null },
-    { title: "Design", description: "Develop mockups, wireframes, and prototypes", completed: false, startDate: null, endDate: null },
-    { title: "Development", description: "Code, test, and iterate on project components", completed: false, startDate: null, endDate: null },
-    { title: "Testing & QA", description: "Perform thorough testing and quality assurance", completed: false, startDate: null, endDate: null },
-    { title: "Deployment", description: "Launch the project and monitor initial performance", completed: false, startDate: null, endDate: null }
-];
-
+let steps = [];
 let projectStartDate = null;
 let projectEndDate = null;
+
+function loadFromLocalStorage() {
+    const savedSteps = localStorage.getItem('workflowSteps');
+    if (savedSteps) {
+        steps = JSON.parse(savedSteps);
+        steps.forEach(step => {
+            if (step.startDate) step.startDate = new Date(step.startDate);
+            if (step.endDate) step.endDate = new Date(step.endDate);
+        });
+    }
+
+    projectStartDate = localStorage.getItem('projectStartDate');
+    if (projectStartDate) {
+        projectStartDate = new Date(projectStartDate);
+        document.getElementById('start-date').value = projectStartDate.toISOString().split('T')[0];
+    }
+
+    projectEndDate = localStorage.getItem('projectEndDate');
+    if (projectEndDate) {
+        projectEndDate = new Date(projectEndDate);
+        document.getElementById('end-date').value = projectEndDate.toISOString().split('T')[0];
+    }
+}
+
+function saveToLocalStorage() {
+    localStorage.setItem('workflowSteps', JSON.stringify(steps));
+    if (projectStartDate) localStorage.setItem('projectStartDate', projectStartDate.toISOString());
+    if (projectEndDate) localStorage.setItem('projectEndDate', projectEndDate.toISOString());
+}
 
 function renderSteps() {
     const container = document.getElementById('steps-container');
@@ -19,6 +40,7 @@ function renderSteps() {
     });
     updateProgress();
     animateSteps();
+    saveToLocalStorage();
 }
 
 function createStepElement(step, index) {
@@ -33,8 +55,8 @@ function createStepElement(step, index) {
             </div>
             <div class="step-description">${step.description}</div>
             <div class="step-dates">
-                <span>Start: ${step.startDate ? new Date(step.startDate).toLocaleDateString() : 'Not set'}</span>
-                <span>End: ${step.endDate ? new Date(step.endDate).toLocaleDateString() : 'Not set'}</span>
+                <span>Start: ${step.startDate ? step.startDate.toLocaleDateString() : 'Not set'}</span>
+                <span>End: ${step.endDate ? step.endDate.toLocaleDateString() : 'Not set'}</span>
             </div>
             <div class="edit-buttons">
                 <button class="edit-button" onclick="editStep(${index})">Edit</button>
@@ -43,8 +65,8 @@ function createStepElement(step, index) {
             <div class="edit-form">
                 <input type="text" class="edit-title" value="${step.title}">
                 <textarea class="edit-description">${step.description}</textarea>
-                <input type="date" class="edit-start-date" value="${step.startDate ? new Date(step.startDate).toISOString().split('T')[0] : ''}">
-                <input type="date" class="edit-end-date" value="${step.endDate ? new Date(step.endDate).toISOString().split('T')[0] : ''}">
+                <input type="date" class="edit-start-date" value="${step.startDate ? step.startDate.toISOString().split('T')[0] : ''}">
+                <input type="date" class="edit-end-date" value="${step.endDate ? step.endDate.toISOString().split('T')[0] : ''}">
                 <button onclick="saveEdit(${index})">Save</button>
             </div>
         </div>
@@ -87,6 +109,7 @@ function addStep() {
 function toggleComplete(index) {
     steps[index].completed = !steps[index].completed;
     updateProgress();
+    saveToLocalStorage();
 }
 
 function updateProgress() {
@@ -134,6 +157,7 @@ function updateProjectDates() {
     projectStartDate = new Date(document.getElementById('start-date').value);
     projectEndDate = new Date(document.getElementById('end-date').value);
     updateProgress();
+    saveToLocalStorage();
 }
 
 function updateCountdown(progressPercentage) {
@@ -173,6 +197,7 @@ function printRoadmap() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    loadFromLocalStorage();
     renderSteps();
     document.getElementById('start-date').addEventListener('change', updateProjectDates);
     document.getElementById('end-date').addEventListener('change', updateProjectDates);
