@@ -1,14 +1,14 @@
-let steps = [];
+let tasks = [];
 let projectStartDate = null;
 let projectEndDate = null;
 
 function loadFromLocalStorage() {
-    const savedSteps = localStorage.getItem('workflowSteps');
-    if (savedSteps) {
-        steps = JSON.parse(savedSteps);
-        steps.forEach(step => {
-            if (step.startDate) step.startDate = new Date(step.startDate);
-            if (step.endDate) step.endDate = new Date(step.endDate);
+    const savedTasks = localStorage.getItem('workflowTasks');
+    if (savedTasks) {
+        tasks = JSON.parse(savedTasks);
+        tasks.forEach(task => {
+            if (task.startDate) task.startDate = new Date(task.startDate);
+            if (task.endDate) task.endDate = new Date(task.endDate);
         });
     }
 
@@ -23,99 +23,201 @@ function loadFromLocalStorage() {
         projectEndDate = new Date(projectEndDate);
         document.getElementById('end-date').value = projectEndDate.toISOString().split('T')[0];
     }
+
+    const projectTitle = localStorage.getItem('projectTitle');
+    if (projectTitle) {
+        document.getElementById('project-title').textContent = projectTitle;
+    }
+
+    const projectDescription = localStorage.getItem('projectDescription');
+    if (projectDescription) {
+        document.getElementById('project-description').textContent = projectDescription;
+    }
 }
 
 function saveToLocalStorage() {
-    localStorage.setItem('workflowSteps', JSON.stringify(steps));
+    localStorage.setItem('workflowTasks', JSON.stringify(tasks));
     if (projectStartDate) localStorage.setItem('projectStartDate', projectStartDate.toISOString());
     if (projectEndDate) localStorage.setItem('projectEndDate', projectEndDate.toISOString());
+    localStorage.setItem('projectTitle', document.getElementById('project-title').textContent);
+    localStorage.setItem('projectDescription', document.getElementById('project-description').textContent);
 }
 
-function renderSteps() {
-    const container = document.getElementById('steps-container');
+function renderTasks() {
+    const container = document.getElementById('tasks-container');
     container.innerHTML = '';
-    steps.forEach((step, index) => {
-        const stepElement = createStepElement(step, index);
-        container.appendChild(stepElement);
+    tasks.forEach((task, index) => {
+        const taskElement = createTaskElement(task, index);
+        container.appendChild(taskElement);
     });
     updateProgress();
-    animateSteps();
+    animateTasks();
     saveToLocalStorage();
 }
 
-function createStepElement(step, index) {
-    const stepElement = document.createElement('div');
-    stepElement.className = 'step';
-    stepElement.innerHTML = `
-        <div class="step-number">${index + 1}</div>
-        <div class="step-content">
-            <div class="checkbox-container">
-                <input type="checkbox" id="checkbox-${index}" ${step.completed ? 'checked' : ''} onchange="toggleComplete(${index})">
-                <label for="checkbox-${index}" class="step-title">${step.title}</label>
-            </div>
-            <div class="step-description">${step.description}</div>
-            <div class="step-dates">
-                <span>Start: ${step.startDate ? step.startDate.toLocaleDateString() : 'Not set'}</span>
-                <span>End: ${step.endDate ? step.endDate.toLocaleDateString() : 'Not set'}</span>
-            </div>
-            <div class="edit-buttons">
-                <button class="edit-button" onclick="editStep(${index})">Edit</button>
-                <button class="delete-button" onclick="deleteStep(${index})">Delete</button>
-            </div>
-            <div class="edit-form">
-                <input type="text" class="edit-title" value="${step.title}">
-                <textarea class="edit-description">${step.description}</textarea>
-                <input type="date" class="edit-start-date" value="${step.startDate ? step.startDate.toISOString().split('T')[0] : ''}">
-                <input type="date" class="edit-end-date" value="${step.endDate ? step.endDate.toISOString().split('T')[0] : ''}">
-                <button onclick="saveEdit(${index})">Save</button>
+function createTaskElement(task, index) {
+    const taskElement = document.createElement('div');
+    taskElement.className = 'task';
+    taskElement.innerHTML = `
+        <div class="task-header ${task.group ? 'group-header' : ''}">
+            <div class="task-number">${index + 1}</div>
+            <div class="task-content">
+                <div class="checkbox-container">
+                    <input type="checkbox" id="checkbox-${index}" ${task.completed ? 'checked' : ''} onchange="toggleComplete(${index})">
+                    <label for="checkbox-${index}" class="task-title">${task.title}</label>
+                </div>
+                <div class="task-description">${task.description}</div>
+                <div class="task-dates">
+                    <span>Start: ${task.startDate ? task.startDate.toLocaleDateString() : 'Not set'}</span>
+                    <span>End: ${task.endDate ? task.endDate.toLocaleDateString() : 'Not set'}</span>
+                </div>
+                <div class="edit-buttons">
+                    <button class="edit-button" onclick="editTask(${index})">Edit</button>
+                    <button class="delete-button" onclick="deleteTask(${index})">Delete</button>
+                    ${task.group ? `<button class="add-subtask-button" onclick="addSubtask(${index})">Add Subtask</button>` : ''}
+                    ${!task.group ? `<button class="make-group-button" onclick="makeGroup(${index})">Make Group</button>` : ''}
+                </div>
+                <div class="edit-form">
+                    <input type="text" class="edit-title" value="${task.title}">
+                    <textarea class="edit-description">${task.description}</textarea>
+                    <input type="date" class="edit-start-date" value="${task.startDate ? task.startDate.toISOString().split('T')[0] : ''}">
+                    <input type="date" class="edit-end-date" value="${task.endDate ? task.endDate.toISOString().split('T')[0] : ''}">
+                    <button onclick="saveEdit(${index})">Save</button>
+                </div>
             </div>
         </div>
     `;
-    return stepElement;
+
+    if (task.group && task.subtasks) {
+        const subtasksContainer = document.createElement('div');
+        subtasksContainer.className = 'subtasks-container';
+        task.subtasks.forEach((subtask, subtaskIndex) => {
+            const subtaskElement = createSubtaskElement(subtask, index, subtaskIndex);
+            subtasksContainer.appendChild(subtaskElement);
+        });
+        taskElement.appendChild(subtasksContainer);
+    }
+
+    return taskElement;
 }
 
-function editStep(index) {
-    const step = document.querySelectorAll('.step')[index];
-    const form = step.querySelector('.edit-form');
+function createSubtaskElement(subtask, taskIndex, subtaskIndex) {
+    const subtaskElement = document.createElement('div');
+    subtaskElement.className = 'subtask';
+    subtaskElement.innerHTML = `
+        <div class="task-content">
+            <div class="checkbox-container">
+                <input type="checkbox" id="checkbox-${taskIndex}-${subtaskIndex}" ${subtask.completed ? 'checked' : ''} onchange="toggleSubtaskComplete(${taskIndex}, ${subtaskIndex})">
+                <label for="checkbox-${taskIndex}-${subtaskIndex}" class="subtask-title">${subtask.title}</label>
+            </div>
+            <div class="subtask-description">${subtask.description}</div>
+            <div class="edit-buttons">
+                <button class="edit-button" onclick="editSubtask(${taskIndex}, ${subtaskIndex})">Edit</button>
+                <button class="delete-button" onclick="deleteSubtask(${taskIndex}, ${subtaskIndex})">Delete</button>
+            </div>
+            <div class="edit-form">
+                <input type="text" class="edit-title" value="${subtask.title}">
+                <textarea class="edit-description">${subtask.description}</textarea>
+                <button onclick="saveSubtaskEdit(${taskIndex}, ${subtaskIndex})">Save</button>
+            </div>
+        </div>
+    `;
+    return subtaskElement;
+}
+
+function editTask(index) {
+    const task = document.querySelectorAll('.task')[index];
+    const form = task.querySelector('.edit-form');
     form.style.display = form.style.display === 'none' ? 'block' : 'none';
 }
 
 function saveEdit(index) {
-    const step = document.querySelectorAll('.step')[index];
-    const title = step.querySelector('.edit-title').value;
-    const description = step.querySelector('.edit-description').value;
-    const startDate = step.querySelector('.edit-start-date').value;
-    const endDate = step.querySelector('.edit-end-date').value;
-    steps[index] = { 
-        ...steps[index], 
+    const task = document.querySelectorAll('.task')[index];
+    const title = task.querySelector('.edit-title').value;
+    const description = task.querySelector('.edit-description').value;
+    const startDate = task.querySelector('.edit-start-date').value;
+    const endDate = task.querySelector('.edit-end-date').value;
+    tasks[index] = { 
+        ...tasks[index],
         title, 
         description, 
         startDate: startDate ? new Date(startDate) : null, 
         endDate: endDate ? new Date(endDate) : null 
     };
-    renderSteps();
+    renderTasks();
 }
 
-function deleteStep(index) {
-    steps.splice(index, 1);
-    renderSteps();
+function deleteTask(index) {
+    tasks.splice(index, 1);
+    renderTasks();
 }
 
-function addStep() {
-    steps.push({ title: "New Step", description: "Description for the new step", completed: false, startDate: null, endDate: null });
-    renderSteps();
+function addTask() {
+    tasks.push({ title: "New Task", description: "Description for the new task", completed: false, startDate: null, endDate: null, group: false });
+    renderTasks();
+}
+
+function makeGroup(index) {
+    tasks[index].group = true;
+    tasks[index].subtasks = [];
+    renderTasks();
+}
+
+function addSubtask(index) {
+    if (!tasks[index].subtasks) {
+        tasks[index].subtasks = [];
+    }
+    tasks[index].subtasks.push({ title: "New Subtask", description: "Description for the new subtask", completed: false });
+    renderTasks();
+}
+
+function editSubtask(taskIndex, subtaskIndex) {
+    const task = document.querySelectorAll('.task')[taskIndex];
+    const subtask = task.querySelectorAll('.subtask')[subtaskIndex];
+    const form = subtask.querySelector('.edit-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveSubtaskEdit(taskIndex, subtaskIndex) {
+    const task = document.querySelectorAll('.task')[taskIndex];
+    const subtask = task.querySelectorAll('.subtask')[subtaskIndex];
+    const title = subtask.querySelector('.edit-title').value;
+    const description = subtask.querySelector('.edit-description').value;
+    tasks[taskIndex].subtasks[subtaskIndex] = { 
+        ...tasks[taskIndex].subtasks[subtaskIndex],
+        title, 
+        description
+    };
+    renderTasks();
+}
+
+function deleteSubtask(taskIndex, subtaskIndex) {
+    tasks[taskIndex].subtasks.splice(subtaskIndex, 1);
+    renderTasks();
 }
 
 function toggleComplete(index) {
-    steps[index].completed = !steps[index].completed;
+    tasks[index].completed = !tasks[index].completed;
+    updateProgress();
+    saveToLocalStorage();
+}
+
+function toggleSubtaskComplete(taskIndex, subtaskIndex) {
+    tasks[taskIndex].subtasks[subtaskIndex].completed = !tasks[taskIndex].subtasks[subtaskIndex].completed;
     updateProgress();
     saveToLocalStorage();
 }
 
 function updateProgress() {
-    const completedSteps = steps.filter(step => step.completed).length;
-    const totalSteps = steps.length;
-    const progressPercentage = (completedSteps / totalSteps) * 100;
+    const totalTasks = tasks.reduce((total, task) => {
+        return total + 1 + (task.subtasks ? task.subtasks.length : 0);
+    }, 0);
+    
+    const completedTasks = tasks.reduce((total, task) => {
+        return total + (task.completed ? 1 : 0) + (task.subtasks ? task.subtasks.filter(subtask => subtask.completed).length : 0);
+    }, 0);
+    
+    const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
     
     const progress = document.querySelector('.progress');
     progress.style.width = `${progressPercentage}%`;
@@ -132,11 +234,27 @@ function updateStepMarkers() {
     const stepMarkers = document.querySelector('.step-markers');
     stepMarkers.innerHTML = '';
     
-    steps.forEach((step, index) => {
+    const totalTasks = tasks.reduce((total, task) => {
+        return total + 1 + (task.subtasks ? task.subtasks.length : 0);
+    }, 0);
+    
+    let completedTasks = 0;
+    tasks.forEach((task, taskIndex) => {
         const marker = document.createElement('div');
-        marker.className = `step-marker ${step.completed ? 'completed' : ''}`;
-        marker.style.left = `${(index / (steps.length - 1)) * 100}%`;
+        marker.className = `step-marker ${task.completed ? 'completed' : ''}`;
+        marker.style.left = `${(completedTasks / (totalTasks - 1)) * 100}%`;
         stepMarkers.appendChild(marker);
+        completedTasks++;
+
+        if (task.subtasks) {
+            task.subtasks.forEach((subtask, subtaskIndex) => {
+                const subtaskMarker = document.createElement('div');
+                subtaskMarker.className = `step-marker subtask-marker ${subtask.completed ? 'completed' : ''}`;
+                subtaskMarker.style.left = `${(completedTasks / (totalTasks - 1)) * 100}%`;
+                stepMarkers.appendChild(subtaskMarker);
+                completedTasks++;
+            });
+        }
     });
 }
 
@@ -144,12 +262,29 @@ function updateProgressLabels() {
     const progressLabels = document.querySelector('.progress-labels');
     progressLabels.innerHTML = '';
     
-    steps.forEach((step, index) => {
+    const totalTasks = tasks.reduce((total, task) => {
+        return total + 1 + (task.subtasks ? task.subtasks.length : 0);
+    }, 0);
+    
+    let currentTask = 0;
+    tasks.forEach((task, taskIndex) => {
         const label = document.createElement('span');
-        label.textContent = `Step ${index + 1}`;
-        label.style.width = `${100 / steps.length}%`;
-        label.style.textAlign = 'center';
+        label.textContent = `Task ${taskIndex + 1}`;
+        label.style.left = `${(currentTask / (totalTasks - 1)) * 100}%`;
+        label.style.transform = 'translateX(-50%)';
         progressLabels.appendChild(label);
+        currentTask++;
+
+        if (task.subtasks) {
+            task.subtasks.forEach((subtask, subtaskIndex) => {
+                const subtaskLabel = document.createElement('span');
+                subtaskLabel.textContent = `Subtask ${subtaskIndex + 1}`;
+                subtaskLabel.style.left = `${(currentTask / (totalTasks - 1)) * 100}%`;
+                subtaskLabel.style.transform = 'translateX(-50%)';
+                progressLabels.appendChild(subtaskLabel);
+currentTask++;
+            });
+        }
     });
 }
 
@@ -182,11 +317,11 @@ function updateCountdown(progressPercentage) {
     }
 }
 
-function animateSteps() {
-    gsap.to('.step', {
+function animateTasks() {
+    gsap.to('.task', {
         opacity: 1,
         y: 0,
-        stagger: 0.2,
+        stagger: 0.1,
         ease: "power2.out",
         duration: 0.5
     });
@@ -198,10 +333,11 @@ function printRoadmap() {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadFromLocalStorage();
-    renderSteps();
+    renderTasks();
     document.getElementById('start-date').addEventListener('change', updateProjectDates);
     document.getElementById('end-date').addEventListener('change', updateProjectDates);
-    document.querySelector('.add-button').addEventListener('click', addStep);
-    document.querySelector('.print-button').addEventListener('click', printRoadmap);
+    document.getElementById('project-title').addEventListener('blur', saveToLocalStorage);
+    document.getElementById('project-description').addEventListener('blur', saveToLocalStorage);
     setInterval(updateProgress, 1000 * 60 * 60); // Update progress every hour
-});
+});              
+             
