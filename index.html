@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Workflow Roadmap with Task Deadlines</title>
+    <title>Project Workflow Roadmap</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
 </head>
 <body>
     <div class="roadmap">
-        <h1>Project Workflow Roadmap</h1>
+        <h1 id="project-title" contenteditable="true">Project Workflow Roadmap</h1>
+        <div id="project-description" contenteditable="true" class="project-description">
+            Click to add project description...
+        </div>
+
         <div class="project-dates">
             <div>
                 <label for="start-date">Project Start Date:</label>
@@ -20,14 +24,18 @@
                 <input type="date" id="end-date">
             </div>
         </div>
+
         <div class="countdown-container">
             <div class="countdown-title">Project Timeline</div>
-            <div class="countdown-value" id="countdown-days">-- days remaining</div>
-            <div class="countdown-subtitle" id="countdown-percentage">--% of project complete</div>
+            <div id="countdown-days" class="countdown-value">-- days remaining</div>
+            <div id="countdown-percentage" class="countdown-subtitle">--% of project complete</div>
         </div>
-        <div id="steps-container"></div>
-        <button class="add-button">Add New Step</button>
-        <button class="print-button">Print Roadmap</button>
+
+        <div id="tasks-container"></div>
+
+        <button class="add-button" onclick="addTask()">Add New Task</button>
+        <button class="print-button" onclick="printRoadmap()">Print Roadmap</button>
+
         <div class="progress-container">
             <div class="progress-bar">
                 <div class="progress"></div>
