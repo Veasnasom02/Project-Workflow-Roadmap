@@ -170,7 +170,7 @@ h1 {
     justify-content: flex-end;
     margin-top: 10px;
 }
-.edit-button, .delete-button, .add-button, .print-button, .add-subtask-button, .make-group-button {
+.edit-button, .delete-button, .add-button, .print-button, .add-subtask-button, .make-group-button, .reset-button {
     background-color: #3498db;
     color: white;
     border: none;
@@ -197,7 +197,10 @@ h1 {
 .make-group-button {
     background-color: #16a085;
 }
-.edit-button:hover, .delete-button:hover, .add-button:hover, .print-button:hover, .add-subtask-button:hover, .make-group-button:hover {
+.reset-button {
+    background-color: #e74c3c;
+}
+.edit-button:hover, .delete-button:hover, .add-button:hover, .print-button:hover, .add-subtask-button:hover, .make-group-button:hover, .reset-button:hover {
     opacity: 0.8;
 }
 .edit-form {
@@ -276,7 +279,7 @@ h1 {
     .roadmap {
         box-shadow: none;
     }
-    .edit-buttons, .add-button, .print-button, .add-subtask-button, .make-group-button {
+    .edit-buttons, .add-button, .print-button, .add-subtask-button, .make-group-button, .reset-button {
         display: none;
     }
 }
