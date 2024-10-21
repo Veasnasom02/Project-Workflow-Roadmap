@@ -282,7 +282,7 @@ function updateProgressLabels() {
                 subtaskLabel.style.left = `${(currentTask / (totalTasks - 1)) * 100}%`;
                 subtaskLabel.style.transform = 'translateX(-50%)';
                 progressLabels.appendChild(subtaskLabel);
-currentTask++;
+                currentTask++;
             });
         }
     });
@@ -331,6 +331,32 @@ function printRoadmap() {
     window.print();
 }
 
+function resetWorkflow() {
+    if (confirm("Are you sure you want to reset the workflow? This will delete all tasks and reset the project details.")) {
+        // Clear tasks
+        tasks = [];
+
+        // Reset project dates
+        projectStartDate = null;
+        projectEndDate = null;
+        document.getElementById('start-date').value = '';
+        document.getElementById('end-date').value = '';
+
+        // Reset project title and description
+        document.getElementById('project-title').textContent = 'Project Workflow Roadmap';
+        document.getElementById('project-description').textContent = 'Click to add project description...';
+
+        // Clear local storage
+        localStorage.clear();
+
+        // Re-render the tasks (which will now be empty)
+        renderTasks();
+
+        // Update the progress and countdown
+        updateProgress();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadFromLocalStorage();
     renderTasks();
@@ -339,5 +365,4 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('project-title').addEventListener('blur', saveToLocalStorage);
     document.getElementById('project-description').addEventListener('blur', saveToLocalStorage);
     setInterval(updateProgress, 1000 * 60 * 60); // Update progress every hour
-});              
-             
+});
